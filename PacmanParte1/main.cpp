@@ -1,6 +1,8 @@
 #include "Map.h"
 #include "Enemy.h"
 #include "TimeManager.h"
+#include "Player.h"
+#include "Inputs.h"
 
 #include <vector>
 
@@ -21,13 +23,10 @@ void Logic();
 /// </summary>
 void Draw();
 
-enum USER_INPUTS { NONE, UP, DOWN, RIGHT, LEFT, QUIT };
 Map pacman_map = Map();
 std::vector<Enemy> enemigos;
-char player_char = 'O';
-int player_x = 1;
-int player_y = 1;
-int player_points = 0;
+Player player = Player(pacman_map.spawn_player);
+enum USER_INPUTS { NONE, UP, DOWN, RIGHT, LEFT, QUIT };
 USER_INPUTS input = USER_INPUTS::NONE;
 bool run = true;
 bool win = false;
@@ -47,8 +46,6 @@ void Setup()
 {
     std::cout.sync_with_stdio(false);
     srand(time(NULL));
-    player_x = pacman_map.spawn_player.X;
-    player_y = pacman_map.spawn_player.Y;
 
     unsigned short int enemyNumber = 0;
     std::cout << "Cuantos enemigos quieres?";
@@ -97,7 +94,8 @@ void Logic()
     }
     else
     {
-        int player_y_new = player_y;
+        player.PlayerMovement();
+        /*int player_y_new = player_y;
         int player_x_new = player_x;
         switch (input)
         {
@@ -151,18 +149,18 @@ void Logic()
 
         player_y = player_y_new;
         player_x = player_x_new;
-
+        */
         for (size_t i = 0; i < enemigos.size(); i++)
         {
-            Enemy::ENEMY_STATE enemystate = enemigos[i].Update(&pacman_map, { (short)player_x, (short)player_y });
+            Enemy::ENEMY_STATE enemystate = enemigos[i].Update(&pacman_map, player.plposition);
             switch (enemystate)
             {
             case Enemy::ENEMY_KILLED:
-                player_points += 50;
+                player.player_points += 50;
                 break;
             case Enemy::ENEMY_DEAD:
-                player_x = pacman_map.spawn_player.X;
-                player_y = pacman_map.spawn_player.Y;
+                player.plposition.X = pacman_map.spawn_player.X;
+                player.plposition.Y = pacman_map.spawn_player.Y;
                 break;
             }
         }
@@ -189,19 +187,15 @@ void Draw()
 {
     ConsoleUtils::Console_SetPos(0, 0);
     pacman_map.Draw();
-    ConsoleUtils::Console_SetPos(player_x, player_y);
-    ConsoleUtils::Console_SetColor(ConsoleUtils::CONSOLE_COLOR::DARK_YELLOW);
-    std::cout << player_char;
-
+    player.Draw();
     //enemy1.Draw();
     for (size_t i = 0; i < enemigos.size(); i++)
     {
         enemigos[i].Draw();
     }
-
     ConsoleUtils::Console_ClearCharacter({ 0,(short)pacman_map.Height });
     ConsoleUtils::Console_SetColor(ConsoleUtils::CONSOLE_COLOR::CYAN);
-    std::cout << "Puntuacion actual: " << player_points << " Puntuacion pendiente: " << pacman_map.points << std::endl;
+    std::cout << "Puntuacion actual: " << player.player_points << " Puntuacion pendiente: " << pacman_map.points << std::endl;
     if (win)
     {
         ConsoleUtils::Console_SetColor(ConsoleUtils::CONSOLE_COLOR::GREEN);
